@@ -984,6 +984,7 @@ menu "Debug Oops, Lockups and Hangs"
 
 config PANIC_ON_OOPS
 	bool "Panic on Oops"
+	default y
 	help
 	  Say Y here to enable the kernel to panic when it oopses. This
 	  has the same effect as setting oops=panic on the kernel command
@@ -1003,7 +1004,7 @@ config PANIC_ON_OOPS_VALUE
 
 config PANIC_TIMEOUT
 	int "panic timeout"
-	default 0
+	default 5
 	help
 	  Set the timeout value (in seconds) until a reboot occurs when
 	  the kernel panics. If n = 0, then we wait forever. A timeout

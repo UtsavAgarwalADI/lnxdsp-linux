@@ -283,6 +283,13 @@ config ARM_SA1100_CPUFREQ
 config ARM_SA1110_CPUFREQ
 	bool
 
+config SC5XX_CPUFREQ
+	tristate "SC5XX CPUFreq support"
+	depends on CPU_FREQ && ( ARCH_SC57X || ARCH_SC58X || ARCH_SC59X || ARCH_SC59X_64 )
+	default m
+	help
+	  This adds the CPUFreq driver support for SC5XX SOCs.
+
 config ARM_SCMI_CPUFREQ
 	tristate "SCMI based CPUfreq driver"
 	depends on ARM_SCMI_PROTOCOL || COMPILE_TEST
