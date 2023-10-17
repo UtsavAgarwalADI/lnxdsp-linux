@@ -20,11 +20,11 @@
  * All processor frequency definitions
  * */
 #ifdef CONFIG_SC58X || CONFIG_SC59X
-#define MIN_MHZ 1200
+#define MIN_MHZ 800
 #define MAX_MHZ 1200
 #elif CONFIG_SC59X_64
 #define MIN_MHZ 1000
-#define MAX_MHZ 1000
+#define MAX_MHZ 700
 #else
 #define MIN_MHZ 0
 #define MAX_MHZ 0
@@ -181,12 +181,14 @@ static int __init load_cpufreq(void) {
 	if (IS_ERR_VALUE(err))
 		return err;
 
+	printk("Loaded cpufreq driver for sc5xx!\n");
 	return 0;
 }
 
 static void __exit unload_cpufreq(void)
 {
 	cpufreq_unregister_driver(&sc5xx_driver);
+	printk("Unloaded cpufreq driver for sc5xx\n");
 }
 
 MODULE_AUTHOR("Utsav Agarwal <utsav.agarwal@analog.com>");
