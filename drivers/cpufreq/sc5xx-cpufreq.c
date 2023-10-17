@@ -19,12 +19,9 @@
 /*
  * All processor frequency definitions
  * */
-#ifdef CONFIG_SC58X || CONFIG_SC59X
+#if defined(CONFIG_ARCH_SC58X) || defined(CONFIG_ARCH_SC59X) || defined(CONFIG_ARCH_SC59X_64)
 #define MIN_MHZ 800
-#define MAX_MHZ 1200
-#elif CONFIG_SC59X_64
-#define MIN_MHZ 1000
-#define MAX_MHZ 700
+#define MAX_MHZ 1000
 #else
 #define MIN_MHZ 0
 #define MAX_MHZ 0
@@ -58,8 +55,10 @@ static unsigned int sc5xx_get_cpu_freq(unsigned int) {
 
 	core_clk = clk_get(NULL,CLK); 
 	
-	if(IS_ERR(core_clk))
+	if(IS_ERR(core_clk)) {
+		printk(KERN_INFO"could not get clk:%s\n",CLK);
 		return 0;
+	}
 	
 	printk(KERN_INFO"Successfully obtained processor clock speed:%u\n",core_clk_rate);
 	core_clk_rate = clk_get_rate(core_clk);
@@ -176,7 +175,14 @@ static struct cpufreq_driver sc5xx_driver = {
 
 /* TO BE REPLACED BY PLATFORM DRIVER */
 static int __init load_cpufreq(void) {
-	int err;	
+	int err;
+	
+	//debug
+	int i;
+	for(i=0; i<=sc5xx_frequency_table[0].driver_data;i++){
+		printk(KERN_ALERT"DEBUG:Freq table[%d]:freq:[%u]Hz\n",i,sc5xx_frequency_table[i].frequency);
+	}
+
 	err = cpufreq_register_driver(&sc5xx_driver);
 	if (IS_ERR_VALUE(err))
 		return err;
