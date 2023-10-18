@@ -224,6 +224,7 @@ static void sc594_clock_probe(struct device_node *np)
 	return;
 
 cleanup:
+	printk(KERN_ALERT"Failed to register clocks for sc594!\n");
 	for (i = 0; i < ARRAY_SIZE(clks); i++)
 		clk_unregister(clks[i]);
 }

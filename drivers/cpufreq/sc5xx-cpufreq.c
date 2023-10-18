@@ -12,9 +12,32 @@
 #include <linux/cpufreq.h>
 #include <linux/err.h>
 #include <linux/types.h>
+#include <linux/delay.h>
 //#include <linux/platform.h>
 
-#define CLK "arm" 
+/*
+ * SYS_CLKIN0 is always what supplies
+ * one of the CCLK inputs.
+ * 
+ * This is true for machines with multiple
+ * CGUs as well - this is produced by CGU0
+ * which is always active.
+ * */
+#define CLK "sys_clkin0" 
+
+/*
+ * CGU_DIV Definitions for clock 
+ * manipulation
+ * */
+
+#define CGU_DIV_UPDT_MASK 0x4000
+#define CGU_DIV_CSEL_MASK 0x000F
+
+#if defined(CONFIG_ARCH_SC59X_64) || defined(CONFIG_ARCH_SC58X)
+#define CGU_DIV 0x3108D00C
+#else
+#define CGU_DIV -1
+#endif
 
 /*
  * All processor frequency definitions
@@ -46,9 +69,28 @@ static int sc5xx_verify(struct cpufreq_policy_data *policy) {
 
 /*
  * Since the final clk for the ARM processor is via the CLK clk, it is agnostic 
- * to what archetecture it is, since different clocks are multiplexed to the 
- * parent before it.
+ * to what archetecture it is. The resultant clock frequency can be 
+ * calculated based on register contents and CLK frequency.
  * */
+static unsigned int sc5xx_get_sysclkin_freq(unsigned int) {
+	struct clk *core_clk;
+	unsigned int core_clk_rate;
+
+	core_clk = clk_get(NULL,CLK); 
+	
+	if(IS_ERR(core_clk)) {
+		printk(KERN_ALERT"could not get clk: %s[%d]\n",CLK);
+		if(!core_clk)
+			printk(KERN_ALERT"got null!\n");
+		return 0;
+	}
+	
+	printk(KERN_INFO"Successfully obtained processor clock speed:%u\n",core_clk_rate);
+	core_clk_rate = clk_get_rate(core_clk);
+	return core_clk_rate;
+
+}
+
 static unsigned int sc5xx_get_cpu_freq(unsigned int) {
 	struct clk *core_clk;
 	unsigned int core_clk_rate;
@@ -56,7 +98,9 @@ static unsigned int sc5xx_get_cpu_freq(unsigned int) {
 	core_clk = clk_get(NULL,CLK); 
 	
 	if(IS_ERR(core_clk)) {
-		printk(KERN_INFO"could not get clk:%s\n",CLK);
+		printk(KERN_ALERT"could not get clk: %s[%d]\n",CLK);
+		if(!core_clk)
+			printk(KERN_ALERT"got null!\n");
 		return 0;
 	}
 	
@@ -116,16 +160,32 @@ struct cpufreq_frequency_table sc5xx_frequency_table[] = {
 
 };
 
+static unsigned int calculate_cclk_freq(uint32_t divisor) {
+	unsigned int sysclk_freq
+	sc5xx_get_cpu_freq()	
+}
+
 static int set_sc5xx_cpu_freq(unsigned int new_freq) {
 	struct clk *core_clk;
-	int err;
+	int err=0;
+	void __iomem *cgu_div;
+	uint32_t pll_divisor;
+	
+	cgu_div = ioremap(CGU_DIV,4);
+	
+	/*
+	 * Check if an existing update is taking place,
+	 * if so, wait for it to complete
+	 * */
+	if(readl(cgu_div)&CGU_DIV_UPDT_MASK) {
+		while(!readl(cgu_div))
+			ndelay(TRANSITION_LATENCY_NS);
+	}
 
-	core_clk = clk_get(NULL,CLK); 
+	pll_divisor = (readl(cgu_div)&CGU_DIV_CSEL_MASK);
 	
-	if(IS_ERR(core_clk))
-		return -ENODEV;
-	
-	err = clk_set_rate(core_clk, new_freq);
+
+	//err = clk_set_rate(core_clk, new_freq);
 	clk_put(core_clk);
 	return err;
 }
@@ -161,6 +221,12 @@ static int sc5xx_target_index(struct cpufreq_policy *policy, unsigned int index)
 static int sc5xx_init(struct cpufreq_policy *policy) {
 	policy->cpuinfo.transition_latency = TRANSITION_LATENCY_NS;
 	policy->freq_table = sc5xx_frequency_table;
+	policy->clk = clk_get(NULL,CLK);
+	if(IS_ERR(policy->clk)) {
+		printk(KERN_ALERT"Could not find clk[%s]\n",CLK);
+		return -ENODEV;
+	}
+	
 	return 0;
 }
 
