@@ -550,9 +550,12 @@
 			snps,mixed-burst;
 			snps,pbl = <8>;
 			snps,force_sf_dma_mode;
+			//snps,force_thresh_dma_mode;
 			snps,perfect-filter-entries = <32>;
 			snps,tso = <1>;
-			clocks = <&clk ADSP_SC598_CLK_GIGE>;
+			//clocks = <&clk ADSP_SC598_CLK_GIGE>;
+			//max-frequency = <100000000>;
+			clocks = <&emac0_clkin>;
 			clock-names = "stmmaceth";
 			adi,system-config = <&pads_system_config>;
 			status = "disabled";
@@ -618,6 +621,14 @@
 			adi,system-config = <&pads_system_config>;
 			status = "disabled";
 		};
+
+		emac0_clkin: emac0-clkin@0 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <125000000>;
+			clock-output-names = "emac0_clkin";
+		};
+
 
 		emac1_clkin: emac1-clkin@0 {
 			compatible = "fixed-clock";

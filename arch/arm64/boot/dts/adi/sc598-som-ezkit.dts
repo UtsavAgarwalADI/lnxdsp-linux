@@ -212,6 +212,7 @@
 	status = "okay";
 	snps,mtl-rx-config = <&emac0rxconfig>;
 	snps,mtl-tx-config = <&emac0txconfig>;
+	max-speed = <1000>;
 
 	emac0txconfig: tx-config {
 		snps,tx-queues-to-use = <3>;
