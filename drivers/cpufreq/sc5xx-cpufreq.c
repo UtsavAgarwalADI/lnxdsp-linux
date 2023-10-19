@@ -160,9 +160,31 @@ struct cpufreq_frequency_table sc5xx_frequency_table[] = {
 
 };
 
-static unsigned int calculate_cclk_freq(uint32_t divisor) {
-	unsigned int sysclk_freq
-	sc5xx_get_cpu_freq()	
+
+/*
+ * CGU_DIV operations
+ *
+ * CCLK is derived from SYS_CLKIN. 
+ * The CGU allows changing the clock rate based on a user defined
+ * value. This can be specified in the register CGU_DIV.CSEL.
+ * The value is utilized as a divisor/multiplier for the SYS_CLKIN 
+ * and put into effect by setting the CGU_DIV.UPDT bit.
+ *
+ * CCLK frequency can be calculated as follows:
+ * CCLK frequency = (SYS_CLKIN frequency / (DF+1)) * MSEL / CGU_DIV.CSEL
+ * 
+ * Similarly, we can also obtain the divisor(CGU_DIV.CSEL) as:
+ * CGU_DIV.CSEL = ((DF + 1) / SYS_CLKIN frequency) * MSEL / target CCLK frequency
+ * */
+static unsigned int calc_cclk_freq(uint32_t divisor) {
+	unsigned int sysclk_freq = 0;
+	sysclk_freq = sc5xx_get_cpu_freq();
+	return sysclk_freq;
+}
+
+static uint32_t calc_cclk_divisor_for_freq(unsigned int freq) {
+	uint32_t divisor = 0;
+	return divisor;
 }
 
 static int set_sc5xx_cpu_freq(unsigned int new_freq) {
@@ -183,7 +205,8 @@ static int set_sc5xx_cpu_freq(unsigned int new_freq) {
 	}
 
 	pll_divisor = (readl(cgu_div)&CGU_DIV_CSEL_MASK);
-	
+	if(calc_cclk_freq(divisor) == new_freq)
+		return 0;
 
 	//err = clk_set_rate(core_clk, new_freq);
 	clk_put(core_clk);
